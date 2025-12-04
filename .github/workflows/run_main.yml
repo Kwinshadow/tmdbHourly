@@ -1,4 +1,4 @@
-name: Run main.py
+name: Run main.py and update movies.json
 
 on:
   push:
@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true  
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -18,11 +22,18 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install kaggle pandas
 
       - name: Run main.py
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: python main.py
-
+        
+      - name: Commit and push movies.json
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add movies.json
+          git commit -m "Update movies.json via GitHub Actions" || echo "No changes to commit"
+          git push
