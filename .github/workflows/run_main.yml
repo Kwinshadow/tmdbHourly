@@ -1,9 +1,9 @@
-name: Run main.py and update movies.json
+name: Run main.py and update movies.zip
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:  
+  workflow_dispatch:
 
 jobs:
   run-python:
@@ -13,7 +13,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          persist-credentials: true  
+          fetch-depth: 0          
+          persist-credentials: true 
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -21,18 +22,37 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install kaggle pandas
+        run: pip install kaggle pandas
+
       - name: Run main.py
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python main.py
-        
-      - name: Commit and push movies.json
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+
+      - name: Commit changes
+        run:
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           git add movies.json
-          git commit -m "Update movies.json via GitHub Actions" || echo "No changes to commit"
-          git push
+          git diff --staged --quiet || git commit -m "Update movies.json via GitHub Actions"
+
+      - name: Pull remote and push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run:
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          git fetch origin main
+          git rebase origin/main || (git rebase --abort && git pull --rebase origin main)
+          if git rev-parse --verify origin/main >/dev/null 2>&1; then
+            UPSTREAM="origin/main"
+          else
+            UPSTREAM="main"
+          fi
+
+          if git log --oneline ${UPSTREAM}..HEAD | grep .; then
+            git push origin HEAD:main --force-with-lease
+          else
+            echo "No new commits to push"
+          fi
