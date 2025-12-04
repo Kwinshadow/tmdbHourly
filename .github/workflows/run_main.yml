@@ -1,9 +1,9 @@
-name: Run main.py and push movies.zip
+name: Run main.py and update movies.json
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch:  
 
 jobs:
   run-python:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          persist-credentials: true   
+          persist-credentials: true  
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -23,23 +23,16 @@ jobs:
       - name: Install dependencies
         run: |
           pip install kaggle pandas
-          
       - name: Run main.py
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: python main.py
-
-      - name: Zip movies.json
-        run: zip -r movies.zip movies.json
-
-      - name: Commit and push movies.zip
+        
+      - name: Commit and push movies.json
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add movies.zip
-          git commit -m "Update movies.zip via GitHub Actions" || echo "No changes to commit"
-          git fetch origin main
-          git reset --soft origin/main
-          git push origin main --force
-
+          git add movies.json
+          git commit -m "Update movies.json via GitHub Actions" || echo "No changes to commit"
+          git push
