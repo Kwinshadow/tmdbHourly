@@ -13,8 +13,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0          
-          persist-credentials: true 
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -32,27 +32,16 @@ jobs:
         run: python main.py
 
       - name: Commit changes
-        run:
+        run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add movies.json
-          git diff --staged --quiet || git commit -m "Update movies.json via GitHub Actions"
+          git add movies.json movies.zip
+          git diff --staged --quiet || git commit -m "Update movies.json and movies.zip via GitHub Actions"
 
-      - name: Pull remote and push changes
+      - name: Push changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run:
+        run: |
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
-          git fetch origin main
-          git rebase origin/main || (git rebase --abort && git pull --rebase origin main)
-          if git rev-parse --verify origin/main >/dev/null 2>&1; then
-            UPSTREAM="origin/main"
-          else
-            UPSTREAM="main"
-          fi
-
-          if git log --oneline ${UPSTREAM}..HEAD | grep .; then
-            git push origin HEAD:main --force-with-lease
-          else
-            echo "No new commits to push"
-          fi
+          git pull --rebase origin main
+          git push origin HEAD:main
