@@ -2,8 +2,8 @@ name: Build Movies Zip
 
 on:
   schedule:
-    - cron: "0 * * * *" 
-  workflow_dispatch:      
+    - cron: "0 * * * *"
+  workflow_dispatch:
 
 jobs:
   run-script:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,19 +26,17 @@ jobs:
       - name: Run main.py
         run: python main.py
 
-      - name: Add movies.zip and commit if changed
+      - name: Commit movies.zip only
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
+          echo "movies.json" >> .gitignore
 
-          if [ -f "movies.zip" ]; then
-            git add movies.zip
-            if ! git diff --cached --quiet; then
-              git commit -m "Update movies.zip [skip ci]"
-              git push
-            else
-              echo "No changes in movies.zip"
-            fi
+          git add movies.zip .gitignore
+
+          if ! git diff --cached --quiet; then
+            git commit -m "Update movies.zip [skip ci]"
+            git push
           else
-            echo "movies.zip not found"
+            echo "No changes detected in movies.zip"
           fi
